@@ -112,6 +112,22 @@ footer { max-width: 60rem; margin: 2.5rem auto 0; color: var(--ink-soft); font: 
   .main { padding: 2rem 2.5rem 3rem; }
 }
 
+/* ---------- menu apribile: si chiude da solo quando si scorre ---------- */
+.menu-btn { position: fixed; right: calc(var(--pad) + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 30; display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border-radius: 999px; border: 1px solid var(--rule); background: var(--sheet); color: var(--accent); box-shadow: var(--shadow); cursor: pointer; transition: bottom 0.2s; }
+.menu-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.menu-btn .i-menu, body.menu-chiuso .menu-btn .i-x { display: none; }
+body.menu-chiuso .menu-btn .i-menu { display: inline; }
+@media (max-width: 61.99rem) {
+  .lett-top { transition: top 0.2s ease; }
+  body:not(.menu-chiuso) .menu-btn { bottom: calc(var(--tabs-h) + 0.75rem + env(safe-area-inset-bottom, 0px)); }
+  body.menu-chiuso .top, body.menu-chiuso .tabs { display: none; }
+  body.menu-chiuso .lett-top { top: env(safe-area-inset-top, 0px); }
+}
+@media (min-width: 62rem) {
+  body.menu-chiuso .app { grid-template-columns: minmax(0, 1fr); }
+  body.menu-chiuso .rail { display: none; }
+}
+
 /* ---------- elementi comuni ---------- */
 .card { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.1rem 1.2rem; display: grid; gap: 0.75rem; align-content: start; min-width: 0; }
 .card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
@@ -328,7 +344,7 @@ button.tmr.end, .quiz-tmr.end { background: var(--bad); border-color: var(--bad)
 </head>
 <body>
 <div class="app">
-  <div class="rail">
+  <div class="rail" id="menu">
     <header class="top">
       <div class="brand"><small class="eyebrow">ASD · colloquio integrativo</small><b>Quaderno d'orale</b></div>
       <span class="countdown" title="Colloquio: martedì 15 dicembre (data obiettivo)"><b id="days">18</b><span id="days-label">giorni al colloquio</span></span>
@@ -2654,6 +2670,7 @@ R
     <footer>Aggiornato il 27 novembre 2026</footer>
   </main>
 </div>
+<button type="button" class="menu-btn" id="menu-btn" aria-controls="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-menu" d="M4 7h16M4 12h16M4 17h16"/><path class="i-x" d="M6 6l12 12M18 6 6 18"/></svg></button>
 
 <!--RIPASSI:START--><script type="application/json" id="ripassi-data">[{"topic": "Blocco 0-1", "due": [{"step": "+1", "date": "29/11", "note": ""}, {"step": "+3", "date": "1/12", "note": ""}, {"step": "+7", "date": "5/12", "note": ""}]}, {"topic": "Blocco 2", "due": [{"step": "+1", "date": "1/12", "note": ""}, {"step": "+3", "date": "3/12", "note": ""}, {"step": "+7", "date": "7/12", "note": ""}]}, {"topic": "Blocco 3", "due": [{"step": "+1", "date": "2/12", "note": ""}, {"step": "+3", "date": "4/12", "note": ""}, {"step": "+7", "date": "8/12", "note": ""}]}, {"topic": "Blocco 4", "due": [{"step": "+1", "date": "3/12", "note": "scheda"}, {"step": "+3", "date": "5/12", "note": ""}, {"step": "+7", "date": "9/12", "note": ""}]}, {"topic": "Blocco 5", "due": [{"step": "+1", "date": "4/12", "note": "scheda"}, {"step": "+3", "date": "6/12", "note": ""}, {"step": "+7", "date": "10/12", "note": ""}]}, {"topic": "Blocco 6a", "due": [{"step": "+1", "date": "6/12", "note": ""}, {"step": "+3", "date": "8/12", "note": ""}, {"step": "+7", "date": "11/12", "note": "simulazione"}]}, {"topic": "Blocco 6b", "due": [{"step": "+1", "date": "7/12", "note": ""}, {"step": "+3", "date": "9/12", "note": ""}, {"step": "+7", "date": "13/12", "note": "simulazione"}]}, {"topic": "Blocco 7", "due": [{"step": "+1", "date": "8/12", "note": ""}, {"step": "+3", "date": "10/12", "note": ""}, {"step": "+7", "date": "13/12", "note": "simulazione"}]}, {"topic": "Blocco 8a", "due": [{"step": "+1", "date": "10/12", "note": ""}, {"step": "+3", "date": "11/12", "note": "simulazione"}]}, {"topic": "Blocco 8b", "due": [{"step": "+1", "date": "11/12", "note": "simulazione"}, {"step": "+3", "date": "13/12", "note": "simulazione"}]}]</script><!--RIPASSI:END-->
 <script>
@@ -2924,6 +2941,63 @@ dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
 /* viste: una alla volta, scelta dall'hash */
 const views = Array.from(document.querySelectorAll(".view"));
 const tabs = Array.from(document.querySelectorAll(".tabs a"));
+
+/* menu: il pulsante lo apre e lo chiude; scorrendo la pagina o scegliendo una sezione si chiude */
+const menuBtn = $("#menu-btn");
+let menuY = 0;
+function setMenu(open) {
+  document.body.classList.toggle("menu-chiuso", !open);
+  menuBtn.setAttribute("aria-expanded", open);
+  menuBtn.title = menuBtn.ariaLabel = open ? "Chiudi il menu" : "Apri il menu";
+  menuY = window.scrollY;
+}
+menuBtn.onclick = () => setMenu(document.body.classList.contains("menu-chiuso"));
+tabs.forEach(a => a.addEventListener("click", () => setMenu(false)));
+setMenu(true);
+
+/* stato dello studio salvato sul dispositivo: vista, punto della pagina, soluzioni 🔮 aperte
+   (lezione e pagina le salva già 00-comune: lett-corrente, lett-ultima) */
+const readJSON = (k, d) => { try { return JSON.parse(get(k)) || d; } catch (e) { return d; } };
+const scrollPos = readJSON("scroll-pos", {});
+const viewNow = () => (views.find(x => !x.hidden) || {id: "oggi"}).id;
+const scrollKey = () => {
+  const v = viewNow();
+  return v !== "letture" ? v : "letture:" + (get("lett-corrente") === "indice" ? "indice" : get("lett-ultima") || "");
+};
+const goTo = y => window.scrollTo({top: y || 0, behavior: "instant"});
+let restoring = true, saveT = null;
+function saveScroll() {
+  clearTimeout(saveT);
+  if (restoring) return;
+  scrollPos[scrollKey()] = Math.round(window.scrollY);
+  put("scroll-pos", JSON.stringify(scrollPos));
+}
+window.addEventListener("scroll", () => {
+  if (!restoring && !document.body.classList.contains("menu-chiuso") && Math.abs(window.scrollY - menuY) > 40) setMenu(false);
+  clearTimeout(saveT); saveT = setTimeout(saveScroll, 250);
+}, {passive: true});
+// prima che un clic cambi pagina o vista, il punto va salvato sotto la pagina vecchia
+document.addEventListener("click", saveScroll, true);
+window.addEventListener("pagehide", saveScroll);
+document.addEventListener("visibilitychange", () => { if (document.hidden) saveScroll(); });
+try { history.scrollRestoration = "manual"; } catch (e) {}
+if (!location.hash) {
+  const v = get("vista");
+  if (v && views.some(x => x.id === v)) history.replaceState(null, "", "#" + v);
+}
+
+const solKey = d => {
+  const l = d.classList.contains("block") ? null : d.closest("details.block.lett");
+  return l && l.id + ":" + Array.prototype.indexOf.call(l.querySelectorAll("details"), d);
+};
+const aperte = new Set(readJSON("lett-aperte", []));
+document.querySelectorAll("details.block.lett details").forEach(d => { if (aperte.has(solKey(d))) d.open = true; });
+document.addEventListener("toggle", e => {
+  const k = e.target.tagName === "DETAILS" && solKey(e.target);
+  if (!k) return;
+  if (e.target.open) aperte.add(k); else aperte.delete(k);
+  put("lett-aperte", JSON.stringify(Array.from(aperte)));
+}, true);
 let focusBlock = null, quizOnOpen = false;
 document.addEventListener("click", e => {
   const a = e.target.closest("[data-focus]");
@@ -2934,8 +3008,9 @@ function route() {
   const id = decodeURIComponent(location.hash.slice(1));
   const v = views.some(x => x.id === id) ? id : id.startsWith("lettura-") ? "letture" : "oggi";
   views.forEach(x => { x.hidden = x.id !== v; });
+  put("vista", v);
   tabs.forEach(a => { if (a.getAttribute("href") === "#" + v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-  if (!id.startsWith("lettura-")) window.scrollTo(0, 0);
+  if (!id.startsWith("lettura-")) goTo(scrollPos[scrollKey()]);
   if (v === "domande" && focusBlock !== null) {
     applyFilter("all");
     const det = blocksEl.querySelector(`.qblock[data-n="${focusBlock}"]`);
@@ -2947,8 +3022,8 @@ function route() {
 }
 window.addEventListener("hashchange", route);
 route();
-// le viste hanno un id: il browser scorrerebbe fino alla sezione invece di partire dall'alto
-window.addEventListener("load", () => requestAnimationFrame(() => window.scrollTo(0, 0)));
+// le viste hanno un id: il browser scorrerebbe fino alla sezione; si torna invece al punto salvato
+window.addEventListener("load", () => requestAnimationFrame(() => { goTo(scrollPos[scrollKey()]); restoring = false; setMenu(true); }));
 
 /* lezioni: "Riprendi" e avanzamento, dopo che 00-comune ha costruito l'indice */
 function lessonsReady() {
